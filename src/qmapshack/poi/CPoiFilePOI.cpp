@@ -432,7 +432,7 @@ void CPoiFilePOI::loadPOIsFromFile(quint64 categoryID, int minLonM10, int minLat
 
   QSqlQuery query(QSqlDatabase::database(filename));
   query.prepare(
-      "SELECT main.poi_index.maxLat, main.poi_index.maxLon, main.poi_index.minLat, main.poi_index.minLon, "
+      "SELECT main.poi_index.lat, main.poi_index.lon, main.poi_index.lat, main.poi_index.lon, "
       "main.poi_data.data, main.poi_data.id "
       "FROM main.poi_data, main.poi_index "
       "WHERE main.poi_data.id IN "
@@ -443,10 +443,10 @@ void CPoiFilePOI::loadPOIsFromFile(quint64 categoryID, int minLonM10, int minLat
       "    ( "
       "        SELECT main.poi_index.id "
       "        FROM main.poi_index "
-      "        WHERE main.poi_index.maxLat<:maxLat "
-      "        AND main.poi_index.minLat>=:minLat "
-      "        AND main.poi_index.maxLon<:maxLon "
-      "        AND main.poi_index.minLon>=:minLon "
+      "        WHERE main.poi_index.lat<:maxLat "
+      "        AND main.poi_index.lat>=:minLat "
+      "        AND main.poi_index.lon<:maxLon "
+      "        AND main.poi_index.lon>=:minLon "
       "    ) "
       "    AND main.poi_category_map.category=:categoryID "
       ") "

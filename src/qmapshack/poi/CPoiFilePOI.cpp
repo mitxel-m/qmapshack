@@ -430,8 +430,14 @@ void CPoiFilePOI::loadPOIsFromFile(quint64 categoryID, int minLonM10, int minLat
     }
   }
 
-  QSqlQuery query(QSqlDatabase::database(filename));
-  query.prepare(
+  QSqlQuery query(QSqlDatabase::database(filename));  
+  // Check if POI file is version 2 or higher, then prepare query for that version
+  QSqlQuery queryver(QSqlDatabase::database(filename));
+   queryver.exec("select main.metadata.value from main.metadata where main.metadata.name='version'");
+   queryver.first();
+   if(queryver.value("value").toInt() > 2)
+    {
+    query.prepare(
       "SELECT main.poi_index.lat, main.poi_index.lon, main.poi_index.lat, main.poi_index.lon, "
       "main.poi_data.data, main.poi_data.id "
       "FROM main.poi_data, main.poi_index "
@@ -439,18 +445,42 @@ void CPoiFilePOI::loadPOIsFromFile(quint64 categoryID, int minLonM10, int minLat
       "("
       "    SELECT main.poi_category_map.id "
       "    FROM main.poi_category_map "
-      "    WHERE main.poi_category_map.id IN "
+      "    WHERE main.poi_category_map.category=:categoryID "
+      "    AND main.poi_category_map.id IN "
       "    ( "
       "        SELECT main.poi_index.id "
       "        FROM main.poi_index "
       "        WHERE main.poi_index.lat<:maxLat "
-      "        AND main.poi_index.lat>=:minLat "
       "        AND main.poi_index.lon<:maxLon "
-      "        AND main.poi_index.lon>=:minLon "
+      "        AND main.poi_index.lat>:minLat "
+      "        AND main.poi_index.lon>:minLon "
       "    ) "
-      "    AND main.poi_category_map.category=:categoryID "
       ") "
       "AND main.poi_data.id = main.poi_index.id");
+    }
+    else
+    {
+    query.prepare(
+      "SELECT main.poi_index.minLat, main.poi_index.minLon, main.poi_index.maxLat, main.poi_index.maxLon, "
+      "main.poi_data.data, main.poi_data.id "
+      "FROM main.poi_data, main.poi_index "
+      "WHERE main.poi_data.id IN "
+      "("
+      "    SELECT main.poi_category_map.id "
+      "    FROM main.poi_category_map "
+      "    WHERE main.poi_category_map.category=:categoryID "
+      "    AND main.poi_category_map.id IN "
+      "    ( "
+      "        SELECT main.poi_index.id "
+      "        FROM main.poi_index "
+      "        WHERE main.poi_index.maxLat<:maxLat "
+      "        AND main.poi_index.maxLon<:maxLon "
+      "        AND main.poi_index.minLat>:minLat "
+      "        AND main.poi_index.minLon>:minLon "
+      "    ) "
+      ") "
+      "AND main.poi_data.id = main.poi_index.id");
+    }
   query.bindValue(":maxLat", QString::number((minLatM10 + 1) / 10., 'f'));
   query.bindValue(":minLat", QString::number(minLatM10 / 10., 'f'));
   query.bindValue(":maxLon", QString::number((minLonM10 + 1) / 10., 'f'));
